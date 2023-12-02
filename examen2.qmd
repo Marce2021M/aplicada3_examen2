@@ -8,12 +8,17 @@ format:
   html:
     page-layout: full
     embed-resources: true
+    cache: false
+
 ---
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
 # cargamos librerias y código principal
 library(dplyr)
 library(kableExtra)
+library(openxlsx)
+library(ggplot2)
+library(stats)
 # Cargamos bases de datos
 ```
 
@@ -23,7 +28,6 @@ library(kableExtra)
 
 Use la base de percepción humana de colores y ejecute el análisis por escalamiento dimensional. Interprete los resultados usando sus propias palabras.
 
-En primer lugar realizamos el `clásico MDS` con la función `cmdscale` del paquete `stats` de R. Y en un principio no obtuvimos los resultados esperados, esto pasó porque la base de datos de `color-stimuli` presenta una matriz de disimilaridad y no de proximidad, la cual por alguna extraña razón es la que utiliza el paquete `cmdscale` para realizar el MDS clásico. Con lo cual realizando los ajustes necesarios obtuvimos lo siguiente mostrados en la figura 1.
 
 ```{r}
 # Cargamos base de datos
@@ -67,14 +71,79 @@ ggplot(df, aes(x = X1, y = X2, color = Color, label = Wavelength)) +
 
 ```
 
-Ahora bien, para poder comparar los resultados obtenidos con el MDS clásico contra los resultados del la `figura 13.3` del libro tenemos la siguiente imagen.
 
-![](non_metric_MDS.png)
-
-Y notamos que con el clásico logramos el mismo efecto de círculo de colores esperado y observado con el no métrico. De hecho, realmente los resultados son muy similares obtenidos por los dos métodos si solo nos fijamos en la estructura de los colores sin importar rotaciones o escalas. Claro que hay ligeras torciones observadas en el círculo de colores del clásico contra el no paramétrico, pero no son nada significativas. Como conclusión final, hace mucho sentido lo obtenido por el MDS clásico y no paramétrico, ya que los colores muy similares entre sí están más cerca, mientras que los colores muy diferentes están más lejos. 
 
 
 # Ejercicio 2
 
 Haga analisis de componentes principales para el archivo turtles.txt. Utilice solamente los datos correspondientes a las tortugas hembras. 
+
+```{r}
+# Cargamos base de datos
+data2 <- read.xlsx("turtles.xlsx")
+turtlesF <- data2 |> 
+        filter(sex == 'f ')
+
+turtlesF <- turtlesF |>
+        mutate(length = log(length),
+               width = log(width),
+               height = log(height))
+
+# Media de las variables
+
+summaryTurtlesF <- turtlesF |>
+                  summarise(mediaLength = mean(length),
+                            mediaWidth = mean(width),
+                            mediaHeight = mean(height))
+
+covariance  <-  cov(turtlesF[,c('length', 'width', 'height')])
+          
+eigenvalues  <- covariance |> eigen()
+
+#PCA
+#calculate principal components
+resultsF <- prcomp(turtlesF[2:4], scale = TRUE)
+
+biplot(resultsF, scale = 0)
+
+var_explainedF = resultsF$sdev^2 / sum(resultsF$sdev^2)
+
+#create scree plot
+qplot(c(1:3), var_explainedF) + 
+  geom_line() + 
+  xlab("Principal Component") + 
+  ylab("Variance Explained") +
+  ggtitle("Scree Plot (Female Turtles)") +
+  ylim(0, 1)
+
+turtlesF$Volume <- pi/6*exp(turtlesF$length+turtlesF$width+turtlesF$height)
+
+ggplot(turtlesF, aes(x = height, y = Volume, color = sex)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Female and Male Turtles", 
+       x = "X-axis Label(height)", y = "Y-axis Label(Volume)") +
+  theme_minimal()
+
+# Transformar variables
+
+pca_scores <- as.matrix(turtlesF[2:4]) %*% resultsF$rotation
+
+# Extract the first principal component (PCA1)
+pca2 <- pca_scores[, 1]
+# Create a new data frame with only PCA1
+df_pca2 <- data.frame(PCA1 = pca2)
+
+df_pca2$Volume <- turtlesF$Volume
+
+plot <- ggplot()+
+  geom_point(data=df_pca2, aes(x = PCA1, y = log(Volume)),color="blue") +
+  labs(title = "Scatter Plot of Female and Male Turtles", 
+       x = "X-axis Label", y = "Y-axis Label") +
+  theme_minimal()
+print(plot)
+
+reg <- lm(log(Volume) ~ PCA1, data = df_pca2)
+summary(reg)
+```
+
 
