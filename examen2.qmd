@@ -1,0 +1,80 @@
+---
+title: "Estadística Aplicada 3 - Examen 2"
+lang: es
+author: "Marcelino 191654"
+date: todays
+
+format:
+  html:
+    page-layout: full
+    embed-resources: true
+---
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
+# cargamos librerias y código principal
+library(dplyr)
+library(kableExtra)
+# Cargamos bases de datos
+```
+
+\newpage
+
+# Ejercicio 1
+
+Use la base de percepción humana de colores y ejecute el análisis por escalamiento dimensional. Interprete los resultados usando sus propias palabras.
+
+En primer lugar realizamos el `clásico MDS` con la función `cmdscale` del paquete `stats` de R. Y en un principio no obtuvimos los resultados esperados, esto pasó porque la base de datos de `color-stimuli` presenta una matriz de disimilaridad y no de proximidad, la cual por alguna extraña razón es la que utiliza el paquete `cmdscale` para realizar el MDS clásico. Con lo cual realizando los ajustes necesarios obtuvimos lo siguiente mostrados en la figura 1.
+
+```{r}
+# Cargamos base de datos
+data1 <- read.xlsx("color_stimuli.xlsx")
+matrix <- 1- as.matrix(data1)
+diag1 <- diag(rep(1,14))
+matrix <- matrix - diag1
+# Clasical scaling
+classical <- cmdscale(matrix, k=2, eig=TRUE, add=TRUE)
+
+hexcodes <- c('#2800ff', 
+              '#0028ff',
+              '#0092ff',
+              '#00b2ff',
+              '#00ffff',
+              '#00ff61',
+              '#77ff00',
+              '#b3ff00',
+              '#fff200',
+              '#ffbe00',
+              '#ff9b00',
+              '#ff5700',
+              '#ff0000',
+              '#e50000'
+              )
+
+# Mapear longitudes de onda a colores 
+
+wavelengths <- c(434, 445, 465, 472, 490, 504, 537, 555, 584, 600, 610, 628, 651, 674)
+
+# Crear un dataframe para ggplot
+df <- data.frame(classical$points, Wavelength = wavelengths, Color = hexcodes)
+
+# Crear la gráfica
+ggplot(df, aes(x = X1, y = X2, color = Color, label = Wavelength)) +
+  geom_point() +
+  geom_text(vjust = -1) +
+  scale_color_identity() +
+  labs(title = "Classical Scaling", x = "Dimension 1", y = "Dimension 2") +
+  theme_minimal()
+
+```
+
+Ahora bien, para poder comparar los resultados obtenidos con el MDS clásico contra los resultados del la `figura 13.3` del libro tenemos la siguiente imagen.
+
+![](non_metric_MDS.png)
+
+Y notamos que con el clásico logramos el mismo efecto de círculo de colores esperado y observado con el no métrico. De hecho, realmente los resultados son muy similares obtenidos por los dos métodos si solo nos fijamos en la estructura de los colores sin importar rotaciones o escalas. Claro que hay ligeras torciones observadas en el círculo de colores del clásico contra el no paramétrico, pero no son nada significativas. Como conclusión final, hace mucho sentido lo obtenido por el MDS clásico y no paramétrico, ya que los colores muy similares entre sí están más cerca, mientras que los colores muy diferentes están más lejos. 
+
+
+# Ejercicio 2
+
+Haga analisis de componentes principales para el archivo turtles.txt. Utilice solamente los datos correspondientes a las tortugas hembras. 
+
