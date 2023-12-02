@@ -8,7 +8,8 @@ format:
   html:
     page-layout: full
     embed-resources: true
-    cache: false
+
+cache: false
 
 ---
 
@@ -26,57 +27,20 @@ library(stats)
 
 # Ejercicio 1
 
-Use la base de percepción humana de colores y ejecute el análisis por escalamiento dimensional. Interprete los resultados usando sus propias palabras.
+En este análisis se trabajó con la base de datos de percepción humana de colores, que según el libro de `Modern Multidimensional Scaling` (CITA1) se le pidió a 14 personas que calificaran la similitud de 14 colores (que solo diferían en sus longitudes de onda pero no en brillo o saturación). Los promedios de estas calificaciones revelaron un patrón de interrelación, un gradiente peculiar de similitudes, en lugar de categorías de color discretas. Esto sugiere que nuestra percepción del color es más un reflejo de un gradiente de similitudes que de categorías de color distintas y separadas. Además, según lo que el autor del libro refiere no es sencillo analizar cómo es que los humanos clasificamos los colores pero que de alguna forma siempre terminamos con cierto orden de similitud entre los colores que refleja una percepción implícita de escala de colores gradual en forma de herradura o círculo, por lo que en este análisis se intenta dar una explicación a este fenómeno. 
 
+Para explicarla, debemos poder entender cuál es nuestra percepción de orden o estructura de los colores solo conociendo lo que percibimos como similares. Para esto se utilizará una técnica estadística llamda `MDS` (Multidimensional Scaling) que permitirá representar en un espacio de `n` dimensiones los datos de similitud de los colores (Hay muchos métodos para poder realizarlo pero como una aproximación simple usaremos el clásico). Por lo general, se utilizan dimensiones muy bajas como 2 o 3 para poder visualizar e interpretar la estructura de los datos, por medio de distancias euclidianas(que representan la similitud) entre los datos analizados. De esta forma aunque la estructura sea muy compleja podrían verse ciertos patrones geométricos que nos darían una idea de cómo percibimos los colores.
 
-```{r}
-# Cargamos base de datos
-data1 <- read.xlsx("color_stimuli.xlsx")
-matrix <- 1- as.matrix(data1)
-diag1 <- diag(rep(1,14))
-matrix <- matrix - diag1
-# Clasical scaling
-classical <- cmdscale(matrix, k=2, eig=TRUE, add=TRUE)
+Con lo cual realizamos el `MDS` en dos dimensiones y obtuvimos la @fig-plot1 que se encuentra en los anexos de este reporte. Notamos que los colores se encuentran en un orden de similitud que va de los azules (casi morados o violetas) a los rojos, pasando por los verdes, amarillos y naranja, en forma de herradura o círculo. Lo cual nos lleva a pensar que implícitamente percibimos los colores de esta forma, como una escala de colores, y esta escala no es solamente lineal sino que es circular, porque en cierta forma colores como el violeta podría ser similar al rojo o azúl dependiendo de cómo lo veas. Además, observamos algo que hay cierta agrupación de colores que la gente los percibe muy similares, lo cual tiene mucho sentido, dado que luego existen discusiones de si el color aguamarina es verde o azul, etc. Por último es interesante encontrar que la forma de círculo también nos permite ver que hay colores diametralmente opuestos, en el sentido de que una persona siempre los identificaría distintos, como el azul oscuro y el amarillo, o el rojo y verde.
 
-hexcodes <- c('#2800ff', 
-              '#0028ff',
-              '#0092ff',
-              '#00b2ff',
-              '#00ffff',
-              '#00ff61',
-              '#77ff00',
-              '#b3ff00',
-              '#fff200',
-              '#ffbe00',
-              '#ff9b00',
-              '#ff5700',
-              '#ff0000',
-              '#e50000'
-              )
+En conclusión, el análisis de escalamiento dimensional nos permite ver que la percepción de los colores es más un reflejo de un gradiente de similitudes que de categorías de color distintas y separadas, y que esta percepción de similitud de colores es en forma de herradura o círculo, además cabe señalar que si realizamos este ejercicio en 3 dimensiones, casi no habrían diferencias significativas en la interpretación de los resultados, por que la disposición de los datos se asemejan a una dona.
 
-# Mapear longitudes de onda a colores 
-
-wavelengths <- c(434, 445, 465, 472, 490, 504, 537, 555, 584, 600, 610, 628, 651, 674)
-
-# Crear un dataframe para ggplot
-df <- data.frame(classical$points, Wavelength = wavelengths, Color = hexcodes)
-
-# Crear la gráfica
-ggplot(df, aes(x = X1, y = X2, color = Color, label = Wavelength)) +
-  geom_point() +
-  geom_text(vjust = -1) +
-  scale_color_identity() +
-  labs(title = "Classical Scaling", x = "Dimension 1", y = "Dimension 2") +
-  theme_minimal()
-
-```
-
-
+\newpage
 
 
 # Ejercicio 2
 
-Haga analisis de componentes principales para el archivo turtles.txt. Utilice solamente los datos correspondientes a las tortugas hembras. 
+**Haga analisis de componentes principales para el archivo turtles.txt. Utilice solamente los datos correspondientes a las tortugas hembras.** 
 
 ```{r}
 # Cargamos base de datos
@@ -146,4 +110,53 @@ reg <- lm(log(Volume) ~ PCA1, data = df_pca2)
 summary(reg)
 ```
 
+# Anexos
 
+## Tablas
+
+## Figuras
+
+```{r, echo=FALSE, warning=FALSE, cache=TRUE, label="fig-plot1"}
+#| fig.align='center',
+#| out.width="70%",
+#| fig.pos='H',
+#| fig.cap="MDS Clásico de la percepción de los colores."
+# Cargamos base de datos
+data1 <- read.xlsx("color_stimuli.xlsx")
+matrix <- 1- as.matrix(data1)
+
+# Clasical scaling
+classical <- cmdscale(matrix, k=2, eig=TRUE, add=TRUE)
+
+hexcodes <- c('#2800ff', 
+              '#0028ff',
+              '#0092ff',
+              '#00b2ff',
+              '#00ffff',
+              '#00ff61',
+              '#77ff00',
+              '#b3ff00',
+              '#fff200',
+              '#ffbe00',
+              '#ff9b00',
+              '#ff5700',
+              '#ff0000',
+              '#e50000'
+              )
+
+# Mapear longitudes de onda a colores 
+
+wavelengths <- c(434, 445, 465, 472, 490, 504, 537, 555, 584, 600, 610, 628, 651, 674)
+
+# Crear un dataframe para ggplot
+df <- data.frame(classical$points, Wavelength = wavelengths, Color = hexcodes)
+
+# Crear la gráfica
+ggplot(df, aes(x = X1, y = X2, color = Color, label = Wavelength)) +
+  geom_point() +
+  geom_text(vjust = 1.25) +
+  scale_color_identity() +
+  labs(title = "Classical Scaling", x = "Dimension 1", y = "Dimension 2") +
+  theme_minimal()
+
+```
