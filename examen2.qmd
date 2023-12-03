@@ -2,12 +2,15 @@
 title: "Estadística Aplicada 3 - Examen 2"
 lang: es
 author: "Marcelino 191654"
-date: todays
+date: today
 
 format:
   html:
     page-layout: full
     embed-resources: true
+    include-in-header: 
+      - \usepackage{float}
+      - \floatplacement{table}{H}
 
 cache: false
 
@@ -27,7 +30,7 @@ library(stats)
 
 # Ejercicio 1
 
-En este análisis se trabajó con la base de datos de percepción humana de colores, que según el libro de `Modern Multidimensional Scaling` (CITA1) se le pidió a 14 personas que calificaran la similitud de 14 colores (que solo diferían en sus longitudes de onda pero no en brillo o saturación). Los promedios de estas calificaciones revelaron un patrón de interrelación, un gradiente peculiar de similitudes, en lugar de categorías de color discretas. Esto sugiere que nuestra percepción del color es más un reflejo de un gradiente de similitudes que de categorías de color distintas y separadas. Además, según lo que el autor del libro refiere no es sencillo analizar cómo es que los humanos clasificamos los colores pero que de alguna forma siempre terminamos con cierto orden de similitud entre los colores que refleja una percepción implícita de escala de colores gradual en forma de herradura o círculo, por lo que en este análisis se intenta dar una explicación a este fenómeno. 
+En este análisis se trabajó con la base de datos de percepción humana de colores, que según el libro de `Modern Multidimensional Scaling` (Borg, I., & Groenen, P. J. F. (2005)) se le pidió a 14 personas que calificaran la similitud de 14 colores (que solo diferían en sus longitudes de onda pero no en brillo o saturación). Los promedios de estas calificaciones revelaron un patrón de interrelación, un gradiente peculiar de similitudes, en lugar de categorías de color discretas. Esto sugiere que nuestra percepción del color es más un reflejo de un gradiente de similitudes que de categorías de color distintas y separadas. Además, según lo que el autor del libro refiere no es sencillo analizar cómo es que los humanos clasificamos los colores pero que de alguna forma siempre terminamos con cierto orden de similitud entre los colores que refleja una percepción implícita de escala de colores gradual en forma de herradura o círculo, por lo que en este análisis se intenta dar una explicación a este fenómeno. 
 
 Para explicarla, debemos poder entender cuál es nuestra percepción de orden o estructura de los colores solo conociendo lo que percibimos como similares. Para esto se utilizará una técnica estadística llamda `MDS` (Multidimensional Scaling) que permitirá representar en un espacio de `n` dimensiones los datos de similitud de los colores (Hay muchos métodos para poder realizarlo pero como una aproximación simple usaremos el clásico). Por lo general, se utilizan dimensiones muy bajas como 2 o 3 para poder visualizar e interpretar la estructura de los datos, por medio de distancias euclidianas(que representan la similitud) entre los datos analizados. De esta forma aunque la estructura sea muy compleja podrían verse ciertos patrones geométricos que nos darían una idea de cómo percibimos los colores.
 
@@ -40,18 +43,31 @@ En conclusión, el análisis de escalamiento dimensional nos permite ver que la 
 
 # Ejercicio 2
 
-**Haga analisis de componentes principales para el archivo turtles.txt. Utilice solamente los datos correspondientes a las tortugas hembras.** 
+En este reporte analizamos la base de datos tortugas hembras, que contiene las variables `length`, `width`, `height`. En este caso realizamos un análisis de componentes principales para poder encontrar índices que nos permitan explicar la variabilidad de los datos de forma resumida. 
 
-```{r}
+Primero checamos los de covarianzas y eigenvalores de la matriz de covarianzas de las variables. Encontramos que hay correlación positiva entre las variables, lo que nos lleva a pensar que hay cierta dependencia entre entre ella la cual podría ser provechosa para explicar la variabilidad de las mismas a través de un solo índice o variable como se pretende en componentes principales. Además, en los eigenvalores, notamos que hay una dirección de mayor variabilidad en los datos que domina sobre los demás, lo cual confirma lo que decíamos sobre la dependencia entre las variables. 
+
+Ahora, cuando realizamos las componentes principales, encontramos que la primera componente principal explica casi toda la variabilidad de los datos (según la @fig-plot3) , lo cual es muy bueno, porque nos permite explicar casi toda la variabilidad de los datos con un solo índice. Cabe resaltar que escalamos los datos para que la varianza de las variables no afectara el análisis, y además antes de escalar transformamos las variables a logaritmo porque encontramos una relación interesante con respecto al volumen. Y es que para calcular el volumen de una tortuga uno pensaría que es multiplicar esas tres variables y multiplicarla por una constante;  de esa forma se podría suponer que si alguna componente principal es una combinación lineal de las log(variables) entonces en cierta forma podríamos encontrar una relación lineal entre la componente principal de las log(variables) y el log(volumen). Y en efecto, encontramos que la primera componente principal es una combinación lineal de las log(variables) y que además tiene una relación lineal con el log(volumen). De hecho, la primera componente principal, según el biplot de la @fig-plot2, es una combinación lineal (casi con la misma proporción) de las tres variables. Y por último, al checar la relación entre la primera componente principal y el log(volumen) encontramos en la @fig-plot4 que hay una relación lineal positiva entre ambas variables, lo cual nos permite explicar el volumen de las tortugas con solo un índice. 
+
+Los datos de esta relación lineal vienen dadas por la siguiente ecuación: (donde el volumen fue calculado como $V = e^{length + width + height}$ tomando en cuenta las log(variables))
+
+$$\textbf{log(volumen)} =  1.732\textbf{PCA1}$$
+
+Y estos fueron calculados con una regresión lineal simple que dio coeficientes súper significativos y un $R^2$ ajustada de 1. Lo cual termina de confirmar la relación lineal entre ambas variables. (véase la @tbl-plot2)
+
+Por lo tanto, el análisis revela que mediante el uso de una única componente principal, es posible explicar con precisión el volumen de las tortugas hembras, simplificando significativamente el análisis de sus dimensiones físicas y ofreciendo valiosas aplicaciones en estudios biológicos más profundos con esta relación encontrada.
+
+\newpage
+
+# Anexos
+
+```{r, echo=FALSE,  warning=FALSE, message=FALSE}
+library(kableExtra)
+
 # Cargamos base de datos
 data2 <- read.xlsx("turtles.xlsx")
 turtlesF <- data2 |> 
         filter(sex == 'f ')
-
-turtlesF <- turtlesF |>
-        mutate(length = log(length),
-               width = log(width),
-               height = log(height))
 
 # Media de las variables
 
@@ -65,28 +81,18 @@ covariance  <-  cov(turtlesF[,c('length', 'width', 'height')])
 eigenvalues  <- covariance |> eigen()
 
 #PCA
+
+turtlesF <- turtlesF |>
+        mutate(length = log(length),
+               width = log(width),
+               height = log(height))
+
 #calculate principal components
 resultsF <- prcomp(turtlesF[2:4], scale = TRUE)
 
-biplot(resultsF, scale = 0)
-
 var_explainedF = resultsF$sdev^2 / sum(resultsF$sdev^2)
 
-#create scree plot
-qplot(c(1:3), var_explainedF) + 
-  geom_line() + 
-  xlab("Principal Component") + 
-  ylab("Variance Explained") +
-  ggtitle("Scree Plot (Female Turtles)") +
-  ylim(0, 1)
-
-turtlesF$Volume <- pi/6*exp(turtlesF$length+turtlesF$width+turtlesF$height)
-
-ggplot(turtlesF, aes(x = height, y = Volume, color = sex)) +
-  geom_point() +
-  labs(title = "Scatter Plot of Female and Male Turtles", 
-       x = "X-axis Label(height)", y = "Y-axis Label(Volume)") +
-  theme_minimal()
+turtlesF$Volume <- exp(turtlesF$length+turtlesF$width+turtlesF$height)
 
 # Transformar variables
 
@@ -99,20 +105,44 @@ df_pca2 <- data.frame(PCA1 = pca2)
 
 df_pca2$Volume <- turtlesF$Volume
 
-plot <- ggplot()+
-  geom_point(data=df_pca2, aes(x = PCA1, y = log(Volume)),color="blue") +
-  labs(title = "Scatter Plot of Female and Male Turtles", 
-       x = "X-axis Label", y = "Y-axis Label") +
-  theme_minimal()
-print(plot)
-
 reg <- lm(log(Volume) ~ PCA1, data = df_pca2)
-summary(reg)
+
 ```
 
-# Anexos
-
 ## Tablas
+
+```{r, echo=FALSE,  warning=FALSE,cache=TRUE, label="tbl-plot1", tbl.pos="H"}
+#| tbl-cap: "Resumen de resultados"
+#| tbl-subcap: 
+#|  - Medias
+#|  - Covarianzas
+#|  - Eigenvalores
+#| layout-ncol: 2
+
+kable(summaryTurtlesF, format = "latex", booktabs = TRUE) |>
+  kable_styling()
+
+kable(data.frame(covariance), format = "latex", booktabs = TRUE) |>
+  kable_styling()
+
+kable(data.frame(eigenvalues=eigenvalues$value), format = "latex", booktabs = TRUE) |>
+  kable_styling()
+
+```
+
+```{r, echo=FALSE,  warning=FALSE,cache=TRUE, label="tbl-plot2", tbl.pos="H"}
+#| tbl-cap: Resumen de resultados regresión
+#| tbl-pos: H
+model_summary <- summary(reg)
+kable(model_summary$coefficients, caption = "Resumen de la Regresión", format = "latex", booktabs = TRUE) %>%
+  kable_styling()
+
+kable(model_summary$adj.r.squared, caption = "Adj R^2", format = "latex", booktabs = TRUE) %>%
+  kable_styling()
+
+```
+
+\newpage
 
 ## Figuras
 
@@ -124,7 +154,7 @@ summary(reg)
 # Cargamos base de datos
 data1 <- read.xlsx("color_stimuli.xlsx")
 matrix <- 1- as.matrix(data1)
-
+matrix <- matrix - diag(14)
 # Clasical scaling
 classical <- cmdscale(matrix, k=2, eig=TRUE, add=TRUE)
 
@@ -160,3 +190,48 @@ ggplot(df, aes(x = X1, y = X2, color = Color, label = Wavelength)) +
   theme_minimal()
 
 ```
+
+```{r, echo=FALSE, warning=FALSE, cache=TRUE, label="fig-plot2"}
+#| fig.align='center',
+#| out.width="50%",
+#| fig.pos='H',
+#| fig.cap="Biplot componentes principales."
+
+biplot(resultsF, scale = 0)
+```
+
+
+```{r, echo=FALSE, warning=FALSE, cache=TRUE, label="fig-plot3"}
+#| fig.align='center',
+#| out.width="70%",
+#| fig.pos='H',
+#| fig.cap="Scree plot."
+#create scree plot
+qplot(c(1:3), var_explainedF) + 
+  geom_line() + 
+  xlab("Principal Component") + 
+  ylab("Variance Explained") +
+  ggtitle("Scree Plot (Female Turtles)") +
+  ylim(0, 1)
+```
+
+
+```{r, echo=FALSE, warning=FALSE, cache=TRUE, label="fig-plot4"}
+#| fig.align='center',
+#| out.width="60%",
+#| fig.pos='H',
+#| fig.cap="Scree plot."
+
+plot <- ggplot()+
+  geom_point(data=df_pca2, aes(x = PCA1, y = log(Volume)),color="blue") +
+  labs(title = "Scatter Plot of Female and Male Turtles", 
+       x = "PCA1", y = "ln(Volume)") +
+  theme_minimal()
+print(plot)
+```
+
+\newpage
+
+# Referencias
+
+Borg, I., & Groenen, P. J. F. (2005). Modern multidimensional scaling: Theory and applications (2nd ed.). Springer Science + Business Media
